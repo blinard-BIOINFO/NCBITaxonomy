@@ -1,4 +1,4 @@
-# NCBI Taxonomy Java Tools
+# NCBI Taxonomy SQL/Java Tools
 
 The current set of tools aims to create a local SQL copy of the NCBI Taxonomy database and proveds Java classes and 
 scripts to query the database.
@@ -10,15 +10,13 @@ scripts to query the database.
   * build a Blast "Delimitation File", used when building a blast database index focusing on a particular NCBI Taxonomy clade.
   * ... etc ...
   
-This package has been initially developed during the following projects:
-* The contribution of mitochondrial metagenomics to large-scale data mining and phylogenetic analysis of Coleoptera. 
-Linard B et al. Mol Phylogenet Evol. 2018 Nov;128:1-11.
-* Lessons from genome skimming of arthropod-preserving ethanol. Linard B. et al.  Mol Ecol Resour. 2016 
-Nov;16(6):1365-1377.
-* Metagenome skimming of insect specimen pools: potential for comparative genomics. Linard et al. Genome Biol Evol. 
-2015 May 14;7(6):1474-89.
+This package was initially developed for the following academic projects, with punctual changes in the following years:
 
-If these sources are of any use in your own projects, the authors would greatly appreciate that you cite one of those.
+* *The contribution of mitochondrial metagenomics to large-scale data mining and phylogenetic analysis of Coleoptera. Linard B et al. Mol Phylogenet Evol. 2018 Nov;128:1-11.*
+* *Lessons from genome skimming of arthropod-preserving ethanol. Linard B. et al.  Mol Ecol Resour. 2016 Nov;16(6):1365-1377.*
+* *Metagenome skimming of insect specimen pools: potential for comparative genomics. Linard et al. Genome Biol Evol. 2015 May 14;7(6):1474-89.*
+
+If these sources are of any use in your own project, the authors would greatly appreciate that you cite one of these manuscripts.
 
 ## Requirements
 
@@ -106,6 +104,6 @@ Connection to database can be tested with operation `TaxoDBConnection`:
 java -cp NCBITaxonomy.jar op.DBConnectionTest
 ```
 
-# Licence
+# License
 
-This code is distributed under the MIT Licence.
+This code is distributed under the MIT License.
