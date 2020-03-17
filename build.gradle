@@ -12,10 +12,22 @@ repositories {
     mavenCentral()
 }
 
+configurations {
+    // configuration that holds jars to include in the jar
+    extraLibs
+}
+
 dependencies {
-    compile 'au.com.bytecode:opencsv:2.4'
-    compile 'info.picocli:picocli:4.2.0'
-    compile 'net.sf.jung:jung-graph-impl:2.0.1'
+    //compile 'au.com.bytecode:opencsv:2.4'
+    //compile 'info.picocli:picocli:4.2.0'
+    //compile 'net.sf.jung:jung-graph-impl:2.0.1'
+    //compile 'org.postgresql:postgresql:42.2.8'
+    extraLibs 'au.com.bytecode:opencsv:2.4'
+    extraLibs 'info.picocli:picocli:4.2.0'
+    extraLibs 'net.sf.jung:jung-graph-impl:2.0.1'
+    extraLibs 'org.postgresql:postgresql:42.2.8'
+
+    configurations.compile.extendsFrom(configurations.extraLibs)
 }
 
 jar {
@@ -24,5 +36,14 @@ jar {
         attributes 'Implementation-Title': project.name
         attributes 'Implementation-Version': project.version
     }
+    from {
+        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
+task copyJar(type: Copy) {
+    from jar // here it automatically reads jar file produced from jar task
+    into rootProject.projectDir
+}
+
+build.dependsOn copyJar
