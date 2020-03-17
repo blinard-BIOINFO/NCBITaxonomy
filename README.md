@@ -1,3 +1,5 @@
+**Contributions improving the code of this repository are welcome !**
+
 # NCBI Taxonomy SQL/Java Tools
 
 This set of tools aims to create a local SQL copy of the NCBI Taxonomy database and uses Java scripts to query the database.
