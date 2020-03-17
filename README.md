@@ -1,7 +1,6 @@
 # NCBI Taxonomy SQL/Java Tools
 
-The current set of tools aims to create a local SQL copy of the NCBI Taxonomy database and proveds Java classes and 
-scripts to query the database.
+This set of tools aims to create a local SQL copy of the NCBI Taxonomy database and uses Java scripts to query the database.
  
  It aims to answer many common operations when working on systematics or species identification, such as :
   * extract lineage for a species
@@ -10,7 +9,7 @@ scripts to query the database.
   * build a Blast "Delimitation File", used when building a blast database index focusing on a particular NCBI Taxonomy clade.
   * ... etc ...
   
-This package was initially developed for the following academic projects, with punctual changes in the following years:
+This package was initially developed for the following academic projects :
 
 * *The contribution of mitochondrial metagenomics to large-scale data mining and phylogenetic analysis of Coleoptera. Linard B et al. Mol Phylogenet Evol. 2018 Nov;128:1-11.*
 * *Lessons from genome skimming of arthropod-preserving ethanol. Linard B. et al.  Mol Ecol Resour. 2016 Nov;16(6):1365-1377.*
@@ -20,8 +19,8 @@ If these sources are of any use in your own project, the authors would greatly a
 
 ## Requirements
 
-* Postgresql server (should be compatible with other SGBDs after adapting files `update_taxonomy.sh` and `taxonomy_schema.sql`)
-* ADMIN or COPY rights associated to your SGBD user/role.
+* Postgresql server (Java code should be compatible with other SGBDs after adapting COPY statements in `update_taxonomy.sh` and the SQL schema in `taxonomy_schema.sql`)
+* ADMIN or COPY rights associated to your SGBD user/role to copy NCBI dumps to your local database.
 * Java >1.8
 
 
@@ -29,13 +28,12 @@ If these sources are of any use in your own project, the authors would greatly a
 
 The installation process is done in 4 steps:
 
-1. Edit 'update_taxonomy.sh' header and execute to download the NCBI taxonomy dumps and copy them in your SQL server.
-   (requires ADMIN or COPY rights associated to your SGBD user/role).
+1. Configure the header of 'update_taxonomy.sh'. Execute itto download the NCBI taxonomy dumps and copy them to your SQL server. (requires ADMIN or COPY rights associated to your SGBD user/role).
 2. Create a user granted with SELECT permissions on the created database.
-3. Write corresponding database credentials in a database.properties file (see below).
-3. Use the Java package to query your database copy (see below).
+3. Write the database credentials of this user in a database.properties file (see example below).
+3. Use the Java package to query your database copy (see example below).
 
-## Implemented operations
+## NCBI Taxonomy operations
 
 ### Calling an operation
 
@@ -75,10 +73,11 @@ op.IdentifiersToLineages
 
 ### Description of operations:
 
-* IdentifiersToLineages
-* ScientificNamesToLineages
-* TaxidToLineage
-* TaxidToSubTreeLeavesLineages
+* IdentifiersToLineages : From a list of NCBI GIs or ACCESSIONs identifiers (written in a file, 1 identifier per line) extract the corresponding NCBI lineages.
+* ScientificNamesToLineages : From a list of Scientific Names, (written in a file, 1 identifier per line) extract the corresponding NCBI lineages.
+* TaxidToLineage : Extract the lineage from a simple taxonomic id.
+* TaxidToSubTreeLeavesLineages : Using a taxonomic id of an internal node of NCBI Taxonomy (for instance, 7041 which is Coleopteran order), extract the lineages of every species belonging to the subtree of this node (with, 7041, extract lineages of every Coleoptaran species.
+* 
 * etc...
 
 [to complete...]
