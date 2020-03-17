@@ -1,0 +1,36 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+version = '0.1.0'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+mainClassName = 'op.DBConnectionTest'
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'au.com.bytecode:opencsv:2.4'
+    compile 'info.picocli:picocli:4.2.0'
+    compile 'net.sf.jung:jung-graph-impl:2.0.1'
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'op.DBConnectionTest'
+        attributes 'Implementation-Title': project.name
+        attributes 'Implementation-Version': project.version
+    }
+}
+
