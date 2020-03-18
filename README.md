@@ -30,15 +30,15 @@ If these sources are of any use in your own project, the authors would greatly a
 
 ### Available operations
 
-* ScientificNamesToLineages : From a list of Scientific Names, (written in a file, 1 identifier per line) extract the corresponding NCBI lineages.
+* **ScientificNamesToLineages** : From a list of Scientific Names, (written in a file, 1 identifier per line) extract the corresponding NCBI lineages.
 
-* TaxidToLineage : Extract the lineage from a simple taxonomic id.
+* **TaxidToLineage** : Extract the lineage from a simple taxonomic id.
 
-* TaxidToSubTreeLeavesLineages : Using a taxonomic id of an internal node of NCBI Taxonomy (for instance, 7041 which is Coleopteran order), extract the lineages of every species belonging to the subtree of this node (with, 7041, extract lineages of every Coleoptaran species.
+* **TaxidToSubTreeLeavesLineages** : Using a taxonomic id of an internal node of NCBI Taxonomy (for instance, 7041 which is Coleopteran order), extract the lineages of every species belonging to the subtree of this node (with, 7041, extract lineages of every Coleoptaran species.
 
-* IdentifiersToLineages : From a list of NCBI GIs or ACCESSIONs identifiers (written in a file, 1 identifier per line) extract the corresponding NCBI lineages. WARNING: queries will be fast only IF `index_accession2taxid` was set to 1 (default is 0) during installation. If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
+* **IdentifiersToLineages** : From a list of NCBI GIs or ACCESSIONs identifiers (written in a file, 1 identifier per line) extract the corresponding NCBI lineages. WARNING: queries will be fast only IF `index_accession2taxid` was set to 1 (default is 0) during installation. If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
 
-* GenerateTaxonomyDelimitationForBlast : One can require a copy of the NCBI Blast database focused on a particular clade. For instance, you may download the Nematodes Blast database but you are actually only interested by C. elegans sequences. A command `blastdb_aliastool -db nematode_mrna -gilist c_elegans_mrna.gi` can help you to build the corresponding Blast index (see NCBI documentation) BUT the annoying part is to build the `gilist` which targets every single sequence of C. elegans. The present operation does exactly that, from a taxonomic id, it will extract every gi numbers associated to the subtree so that you can build later a Blst database focused on a particular clade and accelerate you Blast searches. WARNING: queries will be fast only IF `index_index_gi_taxid_nucl` or `index_index_gi_taxid_prot` were set to 1 during installation (default is 1). If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
+* **GenerateTaxonomyDelimitationForBlast** : One can require a copy of the NCBI Blast database focused on a particular clade. For instance, you may download the Nematodes Blast database but you are actually only interested by C. elegans sequences. A command `blastdb_aliastool -db nematode_mrna -gilist c_elegans_mrna.gi` can help you to build the corresponding Blast index (see NCBI documentation) BUT the annoying part is to build the `gilist` which targets every single sequence of C. elegans. The present operation does exactly that, from a taxonomic id, it will extract every gi numbers associated to the subtree so that you can build later a Blst database focused on a particular clade and accelerate you Blast searches. WARNING: queries will be fast only IF `index_index_gi_taxid_nucl` or `index_index_gi_taxid_prot` were set to 1 during installation (default is 1). If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
 
 * More to come ...
 
