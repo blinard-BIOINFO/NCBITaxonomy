@@ -134,6 +134,8 @@ sudo apt-get install gradle
 Compile sources. To use another JDBC driver (MySQL, Oracle ...) edit `gradle.build` to add the corresponding driver in the dependancies. 
 
 ``` 
+git clone https://github.com/blinard-BIOINFO/NCBITaxonomy.git
+cd ./NCBITaxonomy
 gradle build && gradle clean
 ```
 Rapid test. The command help should appear.
