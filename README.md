@@ -5,10 +5,10 @@
 This set of tools aims to create a local SQL copy of the NCBI Taxonomy database and uses Java scripts to query the database.
  
  It aims to answer many common operations when working on systematics or species identification, such as :
-  * extract lineage for a species
+  * extract a lineage for a species or taxonomic id
   * extract all species below a certain taxonomy node
-  * extract the lineages of all species below a certain taxonomy node
-  * build a Blast "Delimitation File", used when building a blast database index focusing on a particular NCBI Taxonomy clade.
+  * extract every lineages of every species below a certain taxonomy node
+  * build a Blast "Delimitation File", intended to be used with commands `blastdb_aliastool -gilist ` to build Blast database indexes focuses on particular NCBI Taxonomy clades.
   * ... etc ...
   
 This package was initially developed for the following academic projects :
@@ -17,7 +17,7 @@ This package was initially developed for the following academic projects :
 * *Lessons from genome skimming of arthropod-preserving ethanol. Linard B. et al.  Mol Ecol Resour. 2016 Nov;16(6):1365-1377.*
 * *Metagenome skimming of insect specimen pools: potential for comparative genomics. Linard et al. Genome Biol Evol. 2015 May 14;7(6):1474-89.*
 
-If these sources are of any use in your own project, the authors would greatly appreciate that you cite one of these manuscripts.
+If these sources are of any use in your own project, the authors would greatly appreciate that you cite one of these.
 
 ## Requirements
 
@@ -26,14 +26,69 @@ If these sources are of any use in your own project, the authors would greatly a
 * Java JDK 1.8
 
 
+## NCBI Taxonomy operations
+
+### Available operations
+
+* ScientificNamesToLineages : From a list of Scientific Names, (written in a file, 1 identifier per line) extract the corresponding NCBI lineages.
+
+* TaxidToLineage : Extract the lineage from a simple taxonomic id.
+
+* TaxidToSubTreeLeavesLineages : Using a taxonomic id of an internal node of NCBI Taxonomy (for instance, 7041 which is Coleopteran order), extract the lineages of every species belonging to the subtree of this node (with, 7041, extract lineages of every Coleoptaran species.
+
+* IdentifiersToLineages : From a list of NCBI GIs or ACCESSIONs identifiers (written in a file, 1 identifier per line) extract the corresponding NCBI lineages. WARNING: queries will be fast only IF `index_accession2taxid` was set to 1 (default is 0) during installation. If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
+
+* GenerateTaxonomyDelimitationForBlast : One can require a copy of the NCBI Blast database focused on a particular clade. For instance, you may download the Nematodes Blast database but you are actually only interested by C. elegans sequences. A command `blastdb_aliastool -db nematode_mrna -gilist c_elegans_mrna.gi` can help you to build the corresponding Blast index (see NCBI documentation) BUT the annoying part is to build the `gilist` which targets every single sequence of C. elegans. The present operation does exactly that, from a taxonomic id, it will extract every gi numbers associated to the subtree so that you can build later a Blst database focused on a particular clade and accelerate you Blast searches. WARNING: queries will be fast only IF `index_index_gi_taxid_nucl` or `index_index_gi_taxid_prot` were set to 1 during installation (default is 1). If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
+
+* More to come ...
+
+
+### Calling an operation
+
+```
+java -cp NCBITaxonomy.jar op.[operation_name] 
+```
+For instance:
+```
+java -cp NCBITaxonomy.jar op.TaxidToLineage --help
+```
+Will show the usage of this operation:
+```
+Usage: TaxidToLineage [-hrV] [-f=[1|2]] [-o=<out>] -t=int
+Extract NCBI lineage from a NCBI taxid.
+  -f, --format=[1|2]   Format used to output ranks:
+                       1 = 'Homo[Genus];sapiens[Species]'
+                       2 = 'Homo;sapiens' (line 1)
+                            'genus;species' (line 2)
+  -h, --help           Show this help message and exit.
+  -o, --out=<out>      Output results in file instead of stdout.
+  -r, --ranks          Add rank names to scientific names.
+  -t, --taxid=int      The taxonomic id.
+  -V, --version        Print version information and exit.
+```
+
+Available operations can be listed by writing the following line in a terminal, followed by 2 pushes of the TAB key when your cursor is just on the right of the last dot :
+```
+java -cp NCBITaxonomy.jar op.
+```
+If your system is correctly configured for Java autocompletion, you should see a list of all available operations (op).
+```
+op.DBConnectionTest
+op.GenerateTaxonomyDelimitationForBlast
+op.IdentifiersToLineages
+op.ScientificNamesToLineages
+op.TaxidToLineage
+op.TaxidToSubTreeLeavesLineages
+```
+
 ## Installation
 
 The installation process is done in 4 steps:
 
-1. Configure the header of 'update_taxonomy.sh'. Execute to download the NCBI taxonomy dumps and copy them to your SQL server. (requires ADMIN or COPY rights associated to your SGBD user/role).
+1. Configure the header of 'update_taxonomy.sh'. Execute to download the NCBI taxonomy dumps and copy them to a new database in your SQL server. (requires ADMIN or COPY rights associated to your SGBD user/role).
 2. Optionnal: Create a user granted with SELECT permissions on the created database.
-3. Write the database credentials of this user in a database.properties file (see example below).
-4. Use the Java package to query your database copy (see example below).
+3. Write the database credentials of this user in a database.properties file (see below).
+4. Use the Java package to query your new NCBI Taxonomy database via different operations (see below).
 
 
 **Step 1: update_taxonomy.sh**
@@ -99,61 +154,6 @@ By default the java code will look for the file `database.properties` in the dir
 ```
 java -Ddatabase.properties=/path/to/database.properties -cp NCBITaxonomy-0.1.0.jar op.DBConnectionTest
 ```
-
-
-## NCBI Taxonomy operations
-
-### Calling an operation
-
-```
-java -cp NCBITaxonomy.jar op.[operation_name] 
-```
-For instance:
-```
-java -cp NCBITaxonomy.jar op.TaxidToLineage --help
-```
-Will show the usage of this operation:
-```
-Usage: TaxidToLineage [-hrV] [-f=[1|2]] [-o=<out>] -t=int
-Extract NCBI lineage from a NCBI taxid.
-  -f, --format=[1|2]   Format used to output ranks:
-                       1 = 'Homo[Genus];sapiens[Species]'
-                       2 = 'Homo;sapiens' (line 1)
-                            'genus;species' (line 2)
-  -h, --help           Show this help message and exit.
-  -o, --out=<out>      Output results in file instead of stdout.
-  -r, --ranks          Add rank names to scientific names.
-  -t, --taxid=int      The taxonomic id.
-  -V, --version        Print version information and exit.
-```
-
-Available operation can be listed by writing the following line in a terminal, followed by 2 pushes on the TAB key when your cursor is just on the right of the last dot :
-```
-java -cp NCBITaxonomy.jar op.
-```
-If your system is correctly configured for Java autocompletion, you should see a list of all available operations (op).
-```
-op.DBConnectionTest
-op.GenerateTaxonomyDelimitationForBlast
-op.IdentifiersToLineages
-[...]
-```
-
-### Description of operations:
-
-* ScientificNamesToLineages : From a list of Scientific Names, (written in a file, 1 identifier per line) extract the corresponding NCBI lineages.
-
-* TaxidToLineage : Extract the lineage from a simple taxonomic id.
-
-* TaxidToSubTreeLeavesLineages : Using a taxonomic id of an internal node of NCBI Taxonomy (for instance, 7041 which is Coleopteran order), extract the lineages of every species belonging to the subtree of this node (with, 7041, extract lineages of every Coleoptaran species.
-
-* IdentifiersToLineages : From a list of NCBI GIs or ACCESSIONs identifiers (written in a file, 1 identifier per line) extract the corresponding NCBI lineages. WARNING: queries will be fast only IF `index_accession2taxid` was set to 1 (default is 0) during installation. If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
-
-* GenerateTaxonomyDelimitationForBlast : One can require a copy of the NCBI Blast database focused on a particular clade. For instance, you may download the Nematodes Blast database but you are actually only interested by C. elegans sequences. A command `blastdb_aliastool -db nematode_mrna -gilist c_elegans_mrna.gi` can help you to build the corresponding Blast index (see NCBI documentation) BUT the annoying part is to build the `gilist` which targets every single sequence of C. elegans. The present operation does exactly that, from a taxonomic id, it will extract every gi numbers associated to the subtree so that you can build later a Blst database focused on a particular clade and accelerate you Blast searches. WARNING: queries will be fast only IF `index_index_gi_taxid_nucl` or `index_index_gi_taxid_prot` were set to 1 during installation (default is 1). If not, you can index later the column of this table (corresponding SQL lines are in `database_schema.sql`).
-
-* More to come ...
-
-[to complete...]
 
 
 # License
