@@ -11,7 +11,7 @@
 #  ! must be run from sql server host 
 #  ! will ask for sql admin password during the procedure
 #
-#Author: b. linard ; b.linard@nhm.ac.uk
+#Author: benjamin linard ; benjamin.linard@gmail.com
 ##############################################
 
 
@@ -20,29 +20,29 @@
 
 #DB user, need rights for creating databases and dumping data via COPY
 #(either allowed via postgres engine config, or grant role 'pg_write_server_files' from pg11)
-PG_USER=ben
-PG_HOST=/var/run/postgresql
-PG_PORT=1519
-WORKDIR=/home/ben/NCBI_taxonomy
+PG_USER=user
+PG_HOST=localhost
+PG_PORT=5432
+WORKDIR=/path/to/NCBI_taxonomy
 
 #set which very large tables should be indexed or not
 #ex: accession2taxid contains milliards of lines leading to hundreds of Gb of index
 #by default, it is not indexed
 index_accession2taxid=0
 index_index_gi_taxid_nucl=1
-index_index_gi_taxid_prot=0
+index_index_gi_taxid_prot=1
 
 #TO SKIP SOME STEPS
-step_schema=0
-step_download=0
-step_inflate=0
-step_encode=0
-step_dump=0
+step_schema=1
+step_download=1
+step_inflate=1
+step_encode=1
+step_dump=1
 step_index=1
 step_clean=1
 
 #create automatically database name, if different than ""
-#by default database name is ncbi_taxonomy_$(current_date)
+#by default database name is ncbi_taxonomy_$(year_month_day)
 dbname=""
 ##################
 ##################
