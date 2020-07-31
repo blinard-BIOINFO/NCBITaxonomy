@@ -4,7 +4,7 @@
 
 This set of tools aims to create a local SQL copy of the NCBI Taxonomy database and uses Java scripts to query the database.
  
- It aims to answer many common operations when working on systematics or species identification, such as :
+It aims to answer many common operations when working on systematics or species identification, such as :
   * extract a lineage for a species or taxonomic id
   * extract all species below a certain taxonomy node
   * extract every lineages of every species below a certain taxonomy node
@@ -24,6 +24,19 @@ If these sources are of any use in your own project, the authors would greatly a
 * Postgresql server (Java code should be compatible with other SGBDs after adapting COPY statements in `update_taxonomy.sh` and the SQL schema in `taxonomy_schema.sql`)
 * ADMIN or COPY rights associated to your SGBD user/role to copy NCBI dumps to your local database.
 * Java JDK 1.8
+
+## HOW TO USE
+
+**Its main purpose is the treatment of very large lists of species names, sequence identifiers and the export of large chunks of taxonomic data.**
+**Basically, the idea is 1) load the full NCBI taxonomy tree in memory and 2) rapidly query this tree using a list of input queries**
+
+**Good approach:**
+Build a list of thousands of species names or NCBI sequence identifiers as a text file.
+Then all one of the functions of this package ONCE.
+
+**Bad approach:**
+In a bash script call the functions of this package at each iteration.
+This will be super slow... Why? because this would load the full NCBI tree in memory at each iteration !
 
 
 ## NCBI Taxonomy operations
