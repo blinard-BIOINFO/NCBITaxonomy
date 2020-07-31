@@ -1,74 +1,67 @@
 package op;
 
-import environment.Environment;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
+import database.ConnectionTools;
+import graph.NCBITaxonomyTree;
+import picocli.CommandLine;
+
+import java.io.*;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import graph.NCBITaxonomyTree;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 
 /**
  * build a taxonomy delimitation file to target blast search to specific clades
  * @author benjamin linard
  */
-public class GenerateTaxonomyDelimitationForBlast {
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        
-        if (args.length<1) {
-            System.out.println("####################################################");
-            System.out.println("## ARGS: taxonomic_id (integer) 'nucl'/'prot' (string)");
-            System.out.println("####################################################");
-        }
+@CommandLine.Command(
+        name = "GenerateTaxonomyDelimitationForBlast",
+        mixinStandardHelpOptions = true,
+        version = "0.1.0",
+        description = "Build a taxonomy delimitation file to target blast search to specific clades (using blastdb_aliastool utility)."
+)
+
+public class GenerateTaxonomyDelimitationForBlast implements Callable<Integer> {
+
+    @CommandLine.Option(names = {"-t", "--taxid"}, required = true, paramLabel = "int", description = "The taxonomic id.")
+    private int taxid=9606;
+
+    @CommandLine.Option(names = {"-a", "--amino"}, description = "If used, build the delimitation for a protein database (nucleotides by default).")
+    private boolean amino=false;
+
+    @CommandLine.Option(names = {"-o", "--out"}, paramLabel = "file", description = "Output results to file instead of stdout.")
+    private File out=null;
+
+    @CommandLine.Option(names = {"-d", "--db"}, paramLabel = "file", description = "Properties file defining DB connection (if not used, a file named 'database.properties will be searched in local directory).")
+    private File db=null;
+
+
+    public static void main(String[] args) throws Exception {
+        int exitCode = new CommandLine(new op.GenerateTaxonomyDelimitationForBlast()).execute(args);
+        System.exit(exitCode);
+    }
+
+    public Integer call() throws Exception {
         
         try {
-            if (args.length!=2) {
-                System.out.println("Only two argument are authorized taxonomic_id \\(integer\\) 'nucl'/'prot' \\(string\\)");
-                System.exit(1);
-            }
-            int taxid=Integer.parseInt(args[0]);
-            
-            //connection, loaded from local database_taxo.properties file
-                File f=null;
-                InputStream in =null;
-                try {
-                    f=new File(Environment.getExecutablePathWithoutFilename(GenerateTaxonomyDelimitationForBlast.class).getAbsolutePath()+File.separator+"database_taxo.properties");
-                    in = new FileInputStream(f);
-                } catch (FileNotFoundException ex) {
-                    System.out.println("database properties file not found, should be in the same directory as the jar");
+
+            Connection c;
+            if (db == null) {
+                c = ConnectionTools.openConnection(null);
+            } else {
+                if (!(db.exists() || db.canRead())) {
+                    System.out.println("File given via option -d do not exists or cannot be read.");
                     System.exit(1);
-                    //p.load(ExtractSequenceHavingBlastHits.class.getResourceAsStream("database_taxo.properties"));
                 }
-                System.out.println("Connection Configuration loaded from '"+f.getAbsolutePath()+"'");
-                
-            
-            
-            Connection c= DBConnectionTest.connectNCBITaxonomy(in);
+                c = ConnectionTools.openConnection(new FileInputStream(db));
+            }
             NCBITaxonomyTree taxonomy=new NCBITaxonomyTree(c);
-            
-            //System.out.println(taxonomy.getOrganismLineage(7041));
-            //System.out.println(taxonomy.getOrganismLineage(9606));
             
             ArrayList<Integer> subTaxIds = taxonomy.getSubTreeTaxids(taxid);
             
@@ -84,35 +77,40 @@ public class GenerateTaxonomyDelimitationForBlast {
                 }
                 first=false;
             }
-            sb.append(") AS t (taxid), gi_taxid_"+args[1]+" as gi "
+            String type;
+            if (amino) {
+                type = "nucl";
+            } else {
+                type = "prot";
+            }
+            sb.append(") AS t (taxid), gi_taxid_"+type+" as gi "
                     + "where t.taxid=gi.taxid;");
             //System.out.println(sb.toString());
             
             Statement stat = c.createStatement();
             ResultSet res = stat.executeQuery(sb.toString());
-            System.out.println("Writing GIs to temporary file...");
-            File fTemp=new File("blast_GIs.temp");
-            System.out.println("Cache file: "+fTemp.getAbsolutePath());
-            Writer w=new BufferedWriter(new FileWriter(fTemp));
+            System.out.println("Output list of identifiers...");
+            Writer w;
+            if (out != null) {
+                w = Files.newBufferedWriter(out.toPath());
+            } else {
+                w = new OutputStreamWriter(System.out);
+            }
             while(res.next()) {
                 w.append(res.getInt(1)+"\n");
             }
             w.close();
-            System.out.println("File created. Use this list with blastdb_aliastool. ");
+            System.out.println("List created. Use this list as an input of the tool blastdb_aliastool. ");
             res.close();
             stat.close();
             c.close();
-            
-        
-            
 
             
-            
-        } catch (SQLException ex) {
-            Logger.getLogger(GenerateTaxonomyDelimitationForBlast.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
+        } catch (SQLException | IOException ex) {
             Logger.getLogger(GenerateTaxonomyDelimitationForBlast.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
+
+        return 0;
+
     }
 }

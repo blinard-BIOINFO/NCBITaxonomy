@@ -1,31 +1,20 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package database;
 
+
+import environment.Environment;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.DriverPropertyInfo;
-import java.sql.SQLException;
-import java.util.Enumeration;
+import java.sql.*;
 import java.util.Properties;
 
 /**
- * Crée la connection avec la base de données en lisant les informations de connexion,
- * dans le fichier *.properties
+ * open database connection and provide some basic tests
  * @author benjamin linard
  */
 public class ConnectionTools {
-
-
 
     /**
      * open connection with parameters set in the file target by the system property 'database.properties'
@@ -38,14 +27,25 @@ public class ConnectionTools {
     }
 
     /**
-     * open connection with parameters in a inputStream representing a 'database.properties' file
+     * open connection with connection parameters read from inputstream (if null attempts to read from a file named 'database.properties' in local directory)
      * @param properties
      * @return
      * @throws SQLException
      * @throws IOException
      */
     public static Connection openConnection(InputStream properties) throws SQLException, IOException {
-        return ConnectionTools.getConnection(properties);
+        if (properties == null) {
+            File dir = Environment.getExecutablePathWithoutFilename(ConnectionTools.class);
+            File prop = new File(dir.getAbsolutePath()+File.separator+"database.properties");
+            if ( ! (prop.exists() || prop.canRead() )) {
+                System.out.println("Attempted to open DB connection using 'database.properties in local directory, but file does not exist or cannot be read.");
+                System.exit(1);
+            }
+            FileInputStream fis = new FileInputStream(prop);
+            return ConnectionTools.getConnection(fis);
+        } else {
+            return ConnectionTools.getConnection(properties);
+        }
     }
 
     /**
@@ -96,7 +96,7 @@ public class ConnectionTools {
      * @param driver
      * @param url
      */
-    private static void getInfoDriver(Driver driver, String url) {
+    public static void getInfoDriver(Driver driver, String url) {
         int majorVersion = driver.getMajorVersion();
         int minorVersion = driver.getMinorVersion();
         DriverPropertyInfo[] props = null;

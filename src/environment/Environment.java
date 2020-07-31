@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,8 +35,9 @@ public class Environment {
      */
     public static String getExecutablePath(Class c) throws UnsupportedEncodingException {
         String path = "/" + c.getName().replace('.', '/') + ".class";
-        URL url = c.getClass().getResource(path);
-        path = URLDecoder.decode(url.toString(), "UTF-8");
+        URL url = c.getResource(path);
+        path = URLDecoder.decode(url.toString(), StandardCharsets.UTF_8);
+
         // suppression de  la classe ou du jar du path de l'url
         int index = path.lastIndexOf("/");
         path = path.substring(0, index);

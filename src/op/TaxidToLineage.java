@@ -1,6 +1,7 @@
 package op;
 
 import constants.Rank;
+import database.ConnectionTools;
 import graph.NCBITaxonomyTree;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -40,6 +41,9 @@ public class TaxidToLineage implements Callable<Integer> {
     @Option(names = {"-o", "--out"}, description = "Output results in file instead of stdout.")
     private File out=null;
 
+    @CommandLine.Option(names = {"-d", "--db"}, paramLabel = "file", description = "Properties file defining DB connection (if not used, a file named 'database.properties will be searched in local directory).")
+    private File db=null;
+
     public static void main(String[] args) throws Exception {
         int exitCode = new CommandLine(new TaxidToLineage()).execute(args);
         System.exit(exitCode);
@@ -49,23 +53,16 @@ public class TaxidToLineage implements Callable<Integer> {
     public Integer call() throws Exception {
         Connection c=null;
         try {
-            
-            //connection, loaded from local database_taxo.properties file
-//            File f=null;
-//            InputStream in =null;
-//            try {
-//                f=new File(Environment.getExecutablePathWithoutFilename(TaxidToLineage.class).getAbsolutePath()+File.separator+"database_taxo.properties");
-//                in = new FileInputStream(f);
-//            } catch (FileNotFoundException ex) {
-//                System.out.println("database properties file not found, should be in the same directory as the jar");
-//                System.exit(1);
-//                //p.load(ExtractSequenceHavingBlastHits.class.getResourceAsStream("database_taxo.properties"));
-//            }
-//            System.out.println("Connection Configuration loaded from '"+f.getAbsolutePath()+"'");
-                
-            
             //NCBI DB connection
-            c= DBConnectionTest.connectNCBITaxonomy(null);
+            if ( db == null ) {
+                c = ConnectionTools.openConnection(null);
+            } else {
+                if ( ! ( db.exists() || db.canRead() )) {
+                    System.out.println("File given via option -d do not exists or cannot be read.");
+                    System.exit(1);
+                }
+                c = ConnectionTools.openConnection(new FileInputStream(db));
+            }
             //Taxo tree
             NCBITaxonomyTree taxonomy=new NCBITaxonomyTree(c);
             //query
@@ -90,7 +87,7 @@ public class TaxidToLineage implements Callable<Integer> {
                     result.append('[');
                     result.append(rank_name);
                     result.append(']');
-                } else if (ranks && (format==1) ) {
+                } else if (ranks && (format==2) ) {
                     if (!first) { resultLine2.append(';'); }
                     resultLine2.append(rank_name);
                 }
