@@ -36,7 +36,7 @@ public class Environment {
     public static String getExecutablePath(Class c) throws UnsupportedEncodingException {
         String path = "/" + c.getName().replace('.', '/') + ".class";
         URL url = c.getResource(path);
-        path = URLDecoder.decode(url.toString(), StandardCharsets.UTF_8);
+        path = URLDecoder.decode(url.toString(), "UTF-8");
 
         // suppression de  la classe ou du jar du path de l'url
         int index = path.lastIndexOf("/");
