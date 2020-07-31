@@ -135,6 +135,9 @@ jdbc.password=taxonomypublic                                 #password
 ```
 Moreover, if you plan to use something else than Postgresl (MySQL, Oracle ...) do not forget to change the driver accordingly. 
 
+By default, this file will be looked in the same directory where is present the jar file.
+For all operations, this behaviour can be changed by targeting a particular property file with option -d .
+
 **Step 4: Java compilation**
 
 Install Java JDK and compiler is not already done.
@@ -164,12 +167,6 @@ Testing postgres database connection...
 connected on: jdbc:postgresql://127.0.0.1:5432/ncbi_taxonomy_2020_03_12
 with user: taxonomypublic
 ```
-
-By default the java code will look for the file `database.properties` in the directory where `NCBITaxonomy-x.x.x.jar` is saved. Alternatively, you can target this file by setting a Java System Property:
-```
-java -Ddatabase.properties=/path/to/database.properties -cp NCBITaxonomy-0.1.0.jar op.DBConnectionTest
-```
-
 
 # License
 
