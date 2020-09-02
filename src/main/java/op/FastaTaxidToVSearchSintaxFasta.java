@@ -1,4 +1,4 @@
-package main.java.op;
+package op;
 
 import constants.Rank;
 import database.ConnectionTools;
@@ -72,21 +72,26 @@ public class FastaTaxidToVSearchSintaxFasta implements Callable<Integer> {
         int lineCount =1;
         boolean skip = false;
         while ((line = br.readLine()) != null) {
-            String t = line.trim();
-            if (t.length() < 1) {
+            String trimmedLine = line.trim();
+            if (trimmedLine.length() < 1) {
                 continue;
             }
             // convert header
-            if (line.startsWith(">")) {
+            if (trimmedLine.startsWith(">")) {
                 skip = false;
                 //match pattern
-                Matcher matcher = pattern.matcher(line);
+                Matcher matcher = pattern.matcher(trimmedLine);
+                String taxidString = null;
                 while (matcher.find()) {
-                    String taxidString = matcher.group(1);
+                    taxidString = matcher.group(1);
+                }
+                if (taxidString==null) {
+                    System.out.println("Line " + lineCount + " did not match expected pattern [ ;,|:]taxid=[0-9]+[ ;,|:] .");
+                    System.exit(1);
                 }
                 Integer taxid = null;
                 try {
-                    taxid = Integer.parseInt(t);
+                    taxid = Integer.parseInt(taxidString);
                 } catch (NumberFormatException ex) {
                     System.out.println("Line " + lineCount + " cannot be parsed as an integer.");
                     System.exit(1);
@@ -98,7 +103,7 @@ public class FastaTaxidToVSearchSintaxFasta implements Callable<Integer> {
                     skip = true;
                     continue;
                 }
-                StringBuilder sb = new StringBuilder(line.trim());
+                StringBuilder sb = new StringBuilder(trimmedLine.trim());
                 StringBuilder sb2 = new StringBuilder(" ;tax=");
                 //build sintax string, for ranks={domain, kingdom, phylum, class, order, family, genus, species}
                 boolean first = true;
@@ -122,12 +127,19 @@ public class FastaTaxidToVSearchSintaxFasta implements Callable<Integer> {
                     System.out.println("taxid="+taxid+" found in NCBI taxonomy but no rank matching Vsearch(sintax) requirements.");
                     continue;
                 }
-                sb.append(sb2.toString());
-                sb.append('\n');
+                //avoid consecutive ";" in fasta header
+                if (sb.charAt(sb.length()-1)==';') {
+                    w.append(sb.substring(0,sb.length()-1));
+                } else {
+                    w.append(sb.toString());
+                }
+                w.append(sb2.toString());
+                w.append('\n');
             } else {
                 // if sequence line just write without modifications
                 if (!skip) {
                     w.append(line);
+                    w.append('\n');
                 }
             }
             lineCount++;
