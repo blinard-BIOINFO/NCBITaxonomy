@@ -1,6 +1,5 @@
-package op;
+package main.java.op;
 
-import au.com.bytecode.opencsv.CSVWriter;
 import constants.Rank;
 import database.ConnectionTools;
 import graph.NCBITaxonomyTree;
@@ -9,12 +8,11 @@ import picocli.CommandLine;
 import java.io.*;
 import java.nio.file.Files;
 import java.sql.Connection;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * use a list of NCBI gi or accession and get the corresponding lineages
@@ -22,19 +20,16 @@ import java.util.concurrent.Callable;
  */
 
 @CommandLine.Command(
-        name = "IdentifiersToLineages",
+        name = "FastaTaxidToVSearchSintaxFasta",
         mixinStandardHelpOptions = true,
         version = "0.1.0",
-        description = "Build VSearch(sintax)-formatted lineages from a list of taxids."
+        description = "Inject VSearch(sintax)-formatted lineages in a fasta where headers contain taxids matching the pattern [ ;,|:]taxid=[0-9]+[ ;,|:] (examples: ;taxid=1452; or |tqaxid=1452| ...)."
 )
 
-public class TaxidToVSearchSintax implements Callable<Integer> {
+public class FastaTaxidToVSearchSintaxFasta implements Callable<Integer> {
 
-    @CommandLine.Option(names = {"-l", "--taxid_list"}, required = true, paramLabel = "file", description = "An input file containing a list of taxids, one per line.")
+    @CommandLine.Option(names = {"-f", "--fasta_with_taxid"}, required = true, paramLabel = "file", description = "A input fasta, with pattern '[ ;,|:]taxid=[0-9]+[ ;,|:]' present in the headers.")
     private File in=null;
-
-//    @CommandLine.Option(names = {"-f", "--fasta_with_taxid"}, required = true, paramLabel = "file", description = "A input fasta, with pattern 'taxid=[0-9]+' present in the headers.")
-//    private File in=null;
 
     @CommandLine.Option(names = {"-o", "--out"}, paramLabel = "file", description = "Output results to file instead of stdout.")
     private File out=null;
@@ -43,33 +38,13 @@ public class TaxidToVSearchSintax implements Callable<Integer> {
     private File db=null;
 
     public static void main(String[] args) throws Exception {
-        int exitCode = new CommandLine(new op.TaxidToVSearchSintax()).execute(args);
+        int exitCode = new CommandLine(new FastaTaxidToVSearchSintaxFasta()).execute(args);
         System.exit(exitCode);
     }
 
-
     public Integer call() throws Exception {
 
-        BufferedReader br = Files.newBufferedReader(in.toPath());
-        ArrayList<Integer> taxids = new ArrayList<>();
-        String line = null;
-        int lineCount =1;
-        while ((line = br.readLine()) != null) {
-            String t = line.trim();
-            if (t.length() < 1) {
-                continue;
-            }
-            try {
-                Integer taxid = Integer.parseInt(t);
-                taxids.add(taxid);
-            } catch (NumberFormatException ex) {
-                System.out.println("Line "+lineCount+" cannot be parsed as an integer.");
-                System.exit(1);
-            }
-            lineCount++;
-        }
-        br.close();
-
+        // load db
         Connection c;
         if (db == null) {
             c = ConnectionTools.openConnection(null);
@@ -81,21 +56,51 @@ public class TaxidToVSearchSintax implements Callable<Integer> {
             c = ConnectionTools.openConnection(new FileInputStream(db));
         }
         NCBITaxonomyTree taxonomy = new NCBITaxonomyTree(c);
-        Statement stat = c.createStatement();
+        Pattern pattern = Pattern.compile("[ ;,|:]taxid=([0-9]+)[ ;,|:]");
 
-        HashMap<Integer, String> results = new LinkedHashMap<>(); //map(taxid)=completeTaxonomy
+        // output
+        Writer w;
+        if (out != null) {
+            w = Files.newBufferedWriter(out.toPath());
+        } else {
+            w = new OutputStreamWriter(System.out);
+        }
 
-        for (int i = 0; i < taxids.size(); i++) {
-            int taxid = taxids.get(i);
-            if (!results.containsKey(taxid)) {
-
+        // read input
+        BufferedReader br = Files.newBufferedReader(in.toPath());
+        String line = null;
+        int lineCount =1;
+        boolean skip = false;
+        while ((line = br.readLine()) != null) {
+            String t = line.trim();
+            if (t.length() < 1) {
+                continue;
+            }
+            // convert header
+            if (line.startsWith(">")) {
+                skip = false;
+                //match pattern
+                Matcher matcher = pattern.matcher(line);
+                while (matcher.find()) {
+                    String taxidString = matcher.group(1);
+                }
+                Integer taxid = null;
+                try {
+                    taxid = Integer.parseInt(t);
+                } catch (NumberFormatException ex) {
+                    System.out.println("Line " + lineCount + " cannot be parsed as an integer.");
+                    System.exit(1);
+                }
+                //search taxonomy match
                 LinkedHashMap<String, Integer> rankedLineage = taxonomy.getRankedLineage(taxid);
                 if (rankedLineage == null) {
-                    System.out.println("taxid="+taxid+" is absent from NCBI Taxonomy.");
+                    System.out.println("taxid="+taxid+" is absent from NCBI Taxonomy. Fasta skipped: "+line);
+                    skip = true;
                     continue;
                 }
+                StringBuilder sb = new StringBuilder(line.trim());
+                StringBuilder sb2 = new StringBuilder(" ;tax=");
                 //build sintax string, for ranks={domain, kingdom, phylum, class, order, family, genus, species}
-                StringBuilder sb = new StringBuilder(";tax=");
                 boolean first = true;
                 for (Iterator<String> it = rankedLineage.keySet().iterator(); it.hasNext();) {
                     String scientificName = it.next();
@@ -109,37 +114,27 @@ public class TaxidToVSearchSintax implements Callable<Integer> {
                     else if (rank == Rank.GENUS) { s="g:"+scientificName; }
                     else if (rank == Rank.SPECIES) { s="s:"+scientificName.replaceAll(" ","_"); }
                     else { continue; }
-                    if (!first) { sb.append(','); }
-                    sb.append(s);
+                    if (!first) { sb2.append(','); }
+                    sb2.append(s);
                     first = false;
                 }
-                if (sb.length()==5) {
+                if (sb2.length()==5) {
                     System.out.println("taxid="+taxid+" found in NCBI taxonomy but no rank matching Vsearch(sintax) requirements.");
                     continue;
                 }
-                results.put(taxid, sb.toString());
+                sb.append(sb2.toString());
+                sb.append('\n');
+            } else {
+                // if sequence line just write without modifications
+                if (!skip) {
+                    w.append(line);
+                }
             }
+            lineCount++;
         }
 
-        Writer w;
-        if (out != null) {
-            w = Files.newBufferedWriter(out.toPath());
-        } else {
-            w = new OutputStreamWriter(System.out);
-        }
-
-        CSVWriter cw = new CSVWriter(w, '\t');
-        for (Iterator<Integer> iterator = results.keySet().iterator(); iterator.hasNext(); ) {
-            Integer currentId = iterator.next();
-            String sintaxString = results.get(currentId);
-            String[] infos = new String[2];
-            infos[0] = currentId.toString();
-            infos[1] = results.get(currentId);
-            cw.writeNext(infos);
-        }
-        cw.flush();
-        cw.close();
-
+        br.close();
+        w.close();
         return 0;
     }
 
